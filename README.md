@@ -16,7 +16,7 @@ This library is made for this kind of modules (diymore RGB LED)
 3. Test: python demo.py
 
 ## Basic Code Example
-
+```python
 from led_strip_driver import LEDStripDriver
 
 led = LEDStripDriver()
@@ -24,12 +24,11 @@ led.set_color(255, 0, 0)    # Red
 led.set_color_hex("#00FF00") # Green
 led.set_brightness(0.7)      # 70% brightness
 led.clear()                  # Turn off
-
+```
 ## Features
 
 - Set any RGB color (0-255)
 - Use HEX color codes
-- Adjustable brightness
 - Special effects:
   * Breathing (pulsing)
   * Rainbow colors
@@ -53,9 +52,8 @@ led = LEDStripDriver(din_pin=17, cin_pin=27)
 
 ## Notes
 
-- Works with P9813 chips
+- Works with P9813 chip modules like in image
 - Colors: Red, Green, Blue (0-255 each)
-- Brightness: 0.0 (off) to 1.0 (max)
 - Automatically cleans up on exit
 
 ## Files
