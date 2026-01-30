@@ -1,8 +1,8 @@
-# LED Strip Controller
+# LED-Strip-Driver-Module-RaspberryPI
 
 Simple Python driver for P9813 RGB LED strips on Raspberry Pi.
 
-This library is made for this kind of modules
+This library is made for this kind of modules (diymore RGB LED)
 ![RGB LED Strip Driver Module Shield](https://raw.githubusercontent.com/MrKrabat/LED-Strip-Driver-Module/master/images/shield.jpg "RGB LED Strip Driver Module Shield")
 
 ## Quick Setup
