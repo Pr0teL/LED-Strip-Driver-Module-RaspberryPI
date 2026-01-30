@@ -9,11 +9,13 @@ This library is made for this kind of modules (diymore RGB LED)
 
 1. Install: pip install RPi.GPIO
 2. Connect:
-   LED VCC -> Raspberry Pi 3.3V
-   LED GND -> Raspberry Pi GND
-   LED DIN -> Raspberry Pi GPIO 23
-   LED CIN -> Raspberry Pi GPIO 24
-3. Test: python demo.py
+   ```
+   VCC -> Raspberry Pi 3.3V
+   GND -> Raspberry Pi GND
+   DIN -> Raspberry Pi GPIO 23
+   CIN -> Raspberry Pi GPIO 24
+   ```
+4. Test: python demo.py
 
 ## Basic Code Example
 ```python
