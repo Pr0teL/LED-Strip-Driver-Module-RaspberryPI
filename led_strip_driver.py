@@ -6,19 +6,19 @@ import math
 
 class LEDStripDriver:
     """
-    Драйвер для управления RGB лентой на чипе P9813
+    Driver for controlling RGB LED strip with P9813 chip
     
     Args:
-        din_pin (int): GPIO пин для данных (DIN) (по умолчанию: 23)
-        cin_pin (int): GPIO пин для тактового сигнала (CIN) (по умолчанию: 24)
-        brightness (float): Яркость от 0.0 до 1.0 (по умолчанию: 1.0)
+        din_pin (int): GPIO pin for data (DIN) (default: 23)
+        cin_pin (int): GPIO pin for clock signal (CIN) (default: 24)
+        brightness (float): Brightness from 0.0 to 1.0 (default: 1.0)
     """
     
     def __init__(self, din_pin=23, cin_pin=24, brightness=1.0):
         self.DIN_PIN = din_pin
         self.CIN_PIN = cin_pin
         self.num_leds = 1
-        self.brightness = max(0.0, min(1.0, brightness))  # Ограничение 0-1
+        self.brightness = max(0.0, min(1.0, brightness))  # Clamp to 0-1
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.DIN_PIN, GPIO.OUT)
@@ -26,15 +26,15 @@ class LEDStripDriver:
         GPIO.output(self.DIN_PIN, False)
         GPIO.output(self.CIN_PIN, False)
         
-        # Автоматическая очистка при завершении
+        # Automatic cleanup on exit
         atexit.register(self.cleanup)
         
-        # Выключить все светодиоды при старте
+        # Turn off all LEDs on startup
         self.clear()
-        print(f"LEDStripDriver инициализирован: {num_leds} светодиод(ов), пины DIN={din_pin}, CIN={cin_pin}")
+        print(f"LEDStripDriver initialized: pins DIN={din_pin}, CIN={cin_pin}")
     
     def _send_byte(self, val):
-        """Приватный метод: отправка одного байта через DIN с тактированием по CIN"""
+        """Private method: send one byte via DIN with clocking via CIN"""
         for i in range(8):
             GPIO.output(self.DIN_PIN, (val & 0x80) != 0)
             GPIO.output(self.CIN_PIN, True)
@@ -44,62 +44,62 @@ class LEDStripDriver:
             val <<= 1
     
     def _send_pixel(self, r, g, b):
-        """Приватный метод: отправка одного пикселя в формате P9813"""
-        # Применение яркости
+        """Private method: send one pixel in P9813 format"""
+        # Apply brightness
         r = int(r * self.brightness)
         g = int(g * self.brightness)
         b = int(b * self.brightness)
         
-        # Ограничение значений 0-255
+        # Clamp values to 0-255
         r = max(0, min(255, r))
         g = max(0, min(255, g))
         b = max(0, min(255, b))
         
-        # Стартовый фрейм (4×0x00)
+        # Start frame (4×0x00)
         for _ in range(4):
             self._send_byte(0x00)
         
-        # Контрольный байт
+        # Control byte
         control = 0xC0 \
             | ((0x03 - ((r >> 6) & 0x03)) << 4) \
             | ((0x03 - ((g >> 6) & 0x03)) << 2) \
             | (0x03 - ((b >> 6) & 0x03))
         self._send_byte(control)
         
-        # Цвета в порядке B, G, R
+        # Colors in B, G, R order
         self._send_byte(b)
         self._send_byte(g)
         self._send_byte(r)
         
-        # Завершающий фрейм
+        # End frame
         for _ in range(4):
             self._send_byte(0x00)
         
-        # Защелкивание данных
+        # Latch data
         time.sleep(0.001)
     
     def set_brightness(self, brightness):
         """
-        Установка общей яркости ленты
+        Set overall strip brightness
         
         Args:
-            brightness (float): Яркость от 0.0 до 1.0
+            brightness (float): Brightness from 0.0 to 1.0
         """
         self.brightness = max(0.0, min(1.0, brightness))
-        print(f"Яркость установлена: {self.brightness * 100:.0f}%")
+        print(f"Brightness set: {self.brightness * 100:.0f}%")
     
     def set_color(self, r, g, b, led_index=0):
         """
-        Установка цвета для одного светодиода
+        Set color for a single LED
         
         Args:
-            r (int): Красный (0-255)
-            g (int): Зеленый (0-255)
-            b (int): Синий (0-255)
-            led_index (int): Индекс светодиода (по умолчанию: 0)
+            r (int): Red (0-255)
+            g (int): Green (0-255)
+            b (int): Blue (0-255)
+            led_index (int): LED index (default: 0)
         
         Returns:
-            bool: True если цвет установлен, False если индекс вне диапазона
+            bool: True if color set, False if index out of range
         """
         if 0 <= led_index < self.num_leds:
             self._send_pixel(r, g, b)
@@ -108,31 +108,31 @@ class LEDStripDriver:
     
     def set_color_all(self, r, g, b):
         """
-        Установка одинакового цвета для всех светодиодов
+        Set same color for all LEDs
         
         Args:
-            r (int): Красный (0-255)
-            g (int): Зеленый (0-255)
-            b (int): Синий (0-255)
+            r (int): Red (0-255)
+            g (int): Green (0-255)
+            b (int): Blue (0-255)
         """
         self.set_color(r, g, b, 0)
     
     def set_color_rgb(self, rgb_tuple):
         """
-        Установка цвета из кортежа RGB
+        Set color from RGB tuple
         
         Args:
-            rgb_tuple (tuple): Кортеж из трех значений (R, G, B)
+            rgb_tuple (tuple): Tuple of three values (R, G, B)
         """
         if len(rgb_tuple) == 3:
             self.set_color(rgb_tuple[0], rgb_tuple[1], rgb_tuple[2])
     
     def set_color_hex(self, hex_color):
         """
-        Установка цвета из HEX-строки
+        Set color from HEX string
         
         Args:
-            hex_color (str): HEX-цвет в формате '#RRGGBB' или 'RRGGBB'
+            hex_color (str): HEX color in format '#RRGGBB' or 'RRGGBB'
         """
         hex_color = hex_color.lstrip('#')
         if len(hex_color) == 6:
@@ -142,52 +142,52 @@ class LEDStripDriver:
             self.set_color(r, g, b)
     
     def clear(self):
-        """Выключить все светодиоды"""
+        """Turn off all LEDs"""
         self.set_color_all(0, 0, 0)
-        print("Все светодиоды выключены")
+        print("All LEDs turned off")
     
     def demo_sequence(self, delay=1.0):
         """
-        Демонстрационная последовательность цветов
+        Demonstration color sequence
         
         Args:
-            delay (float): Задержка между цветами в секундах
+            delay (float): Delay between colors in seconds
         """
         colors = [
-            ("Красный", (255, 0, 0)),
-            ("Оранжевый", (255, 165, 0)),
-            ("Желтый", (255, 255, 0)),
-            ("Зеленый", (0, 255, 0)),
-            ("Голубой", (0, 255, 255)),
-            ("Синий", (0, 0, 255)),
-            ("Фиолетовый", (128, 0, 128)),
-            ("Розовый", (255, 192, 203)),
-            ("Белый", (255, 255, 255)),
+            ("Red", (255, 0, 0)),
+            ("Orange", (255, 165, 0)),
+            ("Yellow", (255, 255, 0)),
+            ("Green", (0, 255, 0)),
+            ("Cyan", (0, 255, 255)),
+            ("Blue", (0, 0, 255)),
+            ("Purple", (128, 0, 128)),
+            ("Pink", (255, 192, 203)),
+            ("White", (255, 255, 255)),
         ]
         
-        print("Запуск демонстрационной последовательности:")
+        print("Starting demonstration sequence:")
         for name, (r, g, b) in colors:
             print(f"  {name}")
             self.set_color(r, g, b)
             time.sleep(delay)
         
         self.clear()
-        print("Демонстрация завершена")
+        print("Demonstration completed")
     
     def breathing_effect(self, r, g, b, cycles=3, duration=3.0):
         """
-        Эффект дыхания (плавное изменение яркости)
+        Breathing effect (smooth brightness change)
         
         Args:
-            r, g, b (int): Базовый цвет
-            cycles (int): Количество циклов дыхания
-            duration (float): Длительность одного цикла в секундах
+            r, g, b (int): Base color
+            cycles (int): Number of breathing cycles
+            duration (float): Duration of one cycle in seconds
         """
         steps = 50
-        delay = duration / (2 * steps)  # Делим на 2 для вдоха и выдоха
+        delay = duration / (2 * steps)  # Divide by 2 for inhale and exhale
         
         for _ in range(cycles):
-            # Вдох (увеличение яркости)
+            # Inhale (increase brightness)
             for i in range(steps):
                 brightness = i / steps
                 self._send_pixel(
@@ -197,7 +197,7 @@ class LEDStripDriver:
                 )
                 time.sleep(delay)
             
-            # Выдох (уменьшение яркости)
+            # Exhale (decrease brightness)
             for i in range(steps, -1, -1):
                 brightness = i / steps
                 self._send_pixel(
@@ -209,16 +209,16 @@ class LEDStripDriver:
     
     def rainbow(self, cycles=1, speed=0.05):
         """
-        Радужный эффект
+        Rainbow effect
         
         Args:
-            cycles (int): Количество циклов радуги
-            speed (float): Скорость смены цветов
+            cycles (int): Number of rainbow cycles
+            speed (float): Color change speed
         """
-        print(f"Радужный эффект ({cycles} цикл(ов))")
+        print(f"Rainbow effect ({cycles} cycle(s))")
         for cycle in range(cycles):
             for i in range(256):
-                # Генерация радужных цветов
+                # Generate rainbow colors
                 if i < 85:
                     r = i * 3
                     g = 255 - i * 3
@@ -236,27 +236,27 @@ class LEDStripDriver:
                 
                 self.set_color(r, g, b)
                 time.sleep(speed)
-            print(f"  Цикл {cycle + 1} завершен")
+            print(f"  Cycle {cycle + 1} completed")
     
     def police_lights(self, duration=10.0, speed=0.2):
         """
-        Имитация полицейских мигалок
+        Police lights simulation
         
         Args:
-            duration (float): Общая длительность эффекта в секундах
-            speed (float): Скорость мигания
+            duration (float): Total effect duration in seconds
+            speed (float): Blinking speed
         """
-        print("Полицейские мигалки")
+        print("Police lights")
         end_time = time.time() + duration
         
         while time.time() < end_time:
-            # Красный
+            # Red
             self.set_color(255, 0, 0)
             time.sleep(speed)
             self.clear()
             time.sleep(0.05)
             
-            # Синий
+            # Blue
             self.set_color(0, 0, 255)
             time.sleep(speed)
             self.clear()
@@ -264,13 +264,13 @@ class LEDStripDriver:
     
     def fade_between_colors(self, color1, color2, steps=50, duration=2.0):
         """
-        Плавный переход между двумя цветами
+        Smooth transition between two colors
         
         Args:
-            color1 (tuple): Первый цвет (R, G, B)
-            color2 (tuple): Второй цвет (R, G, B)
-            steps (int): Количество шагов перехода
-            duration (float): Длительность перехода в секундах
+            color1 (tuple): First color (R, G, B)
+            color2 (tuple): Second color (R, G, B)
+            steps (int): Number of transition steps
+            duration (float): Transition duration in seconds
         """
         delay = duration / steps
         
@@ -285,10 +285,10 @@ class LEDStripDriver:
     
     def get_status(self):
         """
-        Получение статуса драйвера
+        Get driver status
         
         Returns:
-            dict: Словарь с информацией о состоянии драйвера
+            dict: Dictionary with driver state information
         """
         return {
             "din_pin": self.DIN_PIN,
@@ -299,7 +299,7 @@ class LEDStripDriver:
         }
     
     def cleanup(self):
-        """Очистка GPIO и выключение светодиодов"""
-        print("Очистка ресурсов LEDStripDriver...")
+        """Cleanup GPIO and turn off LEDs"""
+        print("Cleaning up LEDStripDriver resources...")
         self.clear()
         GPIO.cleanup()
